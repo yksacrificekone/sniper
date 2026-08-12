@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sniper Panel — {{ session.username }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="wrap">
+  <div class="row" style="justify-content:space-between">
+    <div>
+      <h1>SNIPER PANEL</h1>
+      <p class="sub">Logged in as <b>{{ session.username }}</b> · owned by <b>zofildoterr</b></p>
+    </div>
+    <div class="row">
+      <a href="{{ cfg['discord_invite'] }}" target="_blank"><button class="gold">DISCORD</button></a>
+      <a href="/logout"><button class="red">LOGOUT</button></a>
+    </div>
+  </div>
+
+  {% if access %}
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <span class="badge {{ access['tier'] }}">{{ tier_info['name'] }}</span>
+        <span style="margin-left:8px">Token: <code>{{ access['token'] }}</code></span>
+      </div>
+      <b style="color:{% if access.expires_at > now %}var(--green){% else %}var(--red){% endif %}">
+        {{ 'EXPIRED' if access.expires_at <= now else 'Expires: ' + access.expires_at.strftime('%Y-%m-%d %H:%M UTC') }}
+      </b>
+    </div>
+    <ul style="margin:14px 0 0 18px;color:#8b93a7;font-size:.9rem">
+      {% for p in tier_info['perks'] %}<li style="margin:3px 0">{{ p }}</li>{% endfor %}
+    </ul>
+  </div>
+
+  {% if access.expires_at > now %}
+  <div class="card">
+    <h3 style="margin-bottom:6px">SNIPE A USERNAME</h3>
+    <p class="sub">Watch a username and claim it the instant it frees up. Traffic is routed
+       through the rotating proxy pool.</p>
+    <form id="snipeForm">
+      <label>Target Username</label>
+      <input type="text" name="username" required placeholder="rare_name">
+      <label>Discord User Token (optional — speeds up claim)</label>
+      <input type="password" name="token" placeholder="••••••••••••••••">
+      <div class="row" style="margin-top:12px">
+        <div style="flex:1;min-width:140px">
+          <label>Min delay (s)</label>
+          <input type="number" step="0.1" name="delay_min" value="{{ cfg['sniper']['delay_min'] }}">
+        </div>
+        <div style="flex:1;min-width:140px">
+          <label>Max delay (s)</label>
+          <input type="number" step="0.1" name="delay_max" value="{{ cfg['sniper']['delay_max'] }}">
+        </div>
+        <div style="flex:1;min-width:140px">
+          <label>Max attempts</label>
+          <input type="number" name="attempts" value="{{ cfg['sniper']['max_attempts'] }}">
+        </div>
+      </div>
+      <div style="margin-top:16px"><button type="submit" class="green">START SNIPER</button></div>
+    </form>
+    <p class="msg" id="snipeMsg" style="display:none"></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:6px">LIVE LOG</h3>
+    <div class="log" id="log">Waiting for a snipe task…</div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="card">
+    <p class="err">You have no active access. Buy a token + code from the owner, then
+       <a href="/logout">log out</a> and use the <b>KEY ACCESS</b> tab.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% if access and access.expires_at > now %}
+<script>
+let activeTask = null;
+
+document.getElementById('snipeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const res = await fetch('/api/start_snipe', {method:'POST', body: new URLSearchParams(fd)});
+  const data = await res.json();
+  const msg = document.getElementById('snipeMsg');
+  msg.style.display = 'block';
+  msg.className = data.ok ? 'msg' : 'err';
+  msg.textContent = data.message;
+  if (data.ok) {
+    activeTask = data.task_id;
+    document.getElementById('log').textContent = 'Task started…';
+    pollLog();
+  }
+});
+
+async function pollLog() {
+  if (!activeTask) return;
+  try {
+    const res = await fetch('/api/sniper_log?task=' + encodeURIComponent(activeTask));
+    const data = await res.json();
+    if (data.lines && data.lines.length) {
+      document.getElementById('log').textContent = data.lines.join('\n');
+      document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+    }
+  } catch (e) {}
+  setTimeout(pollLog, 1500);
+}
+</script>
+{% endif %}
+</body>
+</html>
