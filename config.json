@@ -1,5 +1,6 @@
 {
   "secret_key": "",
+  "brand": "zadenxx",
   "owner": {
     "key": "Z0F1LD0TERRRR11111",
     "password": "zofildoterr",
@@ -23,6 +24,7 @@
         "6-character license code",
         "3 days of sniper access",
         "1 concurrent sniper slot",
+        "Discord / Roblox / TikTok",
         "Proxy rotation enabled"
       ]
     },
@@ -36,6 +38,7 @@
         "8-character license code",
         "7 days of sniper access",
         "5 concurrent sniper slots",
+        "All 3 platforms",
         "Priority sniping queue"
       ]
     },
@@ -49,6 +52,7 @@
         "12-character license code",
         "30 days of sniper access",
         "Unlimited concurrent sniper slots",
+        "All 3 platforms + auto-claim",
         "All features unlocked"
       ]
     }
