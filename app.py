@@ -344,10 +344,13 @@ def api_start_snipe():
 
     target = request.form.get("username", "").strip()
     user_token = request.form.get("token", "").strip()
+    webhook = request.form.get("webhook", "").strip()
     if not target:
         return jsonify(ok=False, message="Target username required."), 400
     if len(target) > 32:
         return jsonify(ok=False, message="Usernames are max 32 characters."), 400
+    if webhook and not webhook.startswith("http"):
+        return jsonify(ok=False, message="Webhook URL must start with http(s)://."), 400
 
     try:
         attempts = int(request.form.get("attempts", cfg["sniper"]["max_attempts"]))
@@ -363,9 +366,10 @@ def api_start_snipe():
     if not PROXIES:
         return jsonify(ok=False, message="No proxies loaded. Check proxies.txt."), 500
 
-    task_id = start_snipe(target, user_token, attempts, delay_min, delay_max,
-                          PROXIES, lambda line: SNIPE_LOGS[task_id]["lines"].append(line))
-    SNIPE_LOGS[task_id] = {"user": uid, "lines": []}
+    logs_holder = {"lines": []}
+    task_id = start_snipe(target, user_token, webhook, attempts, delay_min, delay_max,
+                          PROXIES, lambda line: logs_holder["lines"].append(line))
+    SNIPE_LOGS[task_id] = {"user": uid, "lines": logs_holder["lines"]}
     return jsonify(ok=True, task_id=task_id,
                    message="Sniper started on %s via proxy pool." % target)
 
@@ -532,8 +536,10 @@ PANEL_HTML = """
     <form id="snipeForm">
       <label>Target Username</label>
       <input type="text" name="username" required placeholder="rare_name">
-      <label>Discord User Token (optional — speeds up claim)</label>
+      <label>Discord User Token (optional — enables auto-claim)</label>
       <input type="password" name="token" placeholder="••••••••••••••••">
+      <label>Discord Webhook URL (optional — hits get pushed here)</label>
+      <input type="text" name="webhook" placeholder="https://discord.com/api/webhooks/...">
       <div class="row" style="margin-top:12px">
         <div style="flex:1;min-width:140px">
           <label>Min delay (s)</label>
