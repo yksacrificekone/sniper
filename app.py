@@ -1,7 +1,11 @@
 """
-zofild-sniper — Flask web panel.
-All HTML + CSS is embedded here so the project runs from .py files only.
-Owner key:  Z0F1LD0TERRRR11111  (unlimited, never expires)
+zadenxx — multi-platform username sniper web panel.
+Brand   : zadenxx
+Owner   : zofildoterr
+Keys    : Z0F1LD0TERRRR11111 (unlimited) ·
+          3DDDDLOOOOLLLARRRR{n} ($3) · PREMIUM5DOLLAAAA{n} ($5) ·
+          ADDDMIMNNACCESSSSSSS{n} ($10)
+All HTML + CSS embedded — single .py file.
 """
 import hashlib
 import json
@@ -23,6 +27,7 @@ USERS_PATH = os.path.join(BASE, "users.json")
 
 DEFAULT_CONFIG = {
     "secret_key": "",
+    "brand": "zadenxx",
     "owner": {
         "key": "Z0F1LD0TERRRR11111",
         "password": "zofildoterr",
@@ -42,6 +47,7 @@ DEFAULT_CONFIG = {
                 "6-character license code",
                 "3 days of sniper access",
                 "1 concurrent sniper slot",
+                "Discord / Roblox / TikTok",
                 "Proxy rotation enabled"
             ]
         },
@@ -55,6 +61,7 @@ DEFAULT_CONFIG = {
                 "8-character license code",
                 "7 days of sniper access",
                 "5 concurrent sniper slots",
+                "All 3 platforms",
                 "Priority sniping queue"
             ]
         },
@@ -68,6 +75,7 @@ DEFAULT_CONFIG = {
                 "12-character license code",
                 "30 days of sniper access",
                 "Unlimited concurrent sniper slots",
+                "All 3 platforms + auto-claim",
                 "All features unlocked"
             ]
         }
@@ -165,7 +173,7 @@ def active_snipe_count(uid):
 
 @app.route("/")
 def index():
-    return render_template_string(INDEX_HTML, css=CSS,
+    return render_template_string(INDEX_HTML, css=CSS, brand=cfg["brand"],
                                   error=request.args.get("error", ""))
 
 
@@ -200,7 +208,6 @@ def key_access():
     token = request.form.get("token", "").strip()
     code = request.form.get("code", "").strip()
 
-    # Owner key -> unlimited owner panel
     if token == cfg["owner"]["key"]:
         if code == cfg["owner"]["password"]:
             session.clear()
@@ -244,7 +251,7 @@ def panel():
             "tier_name": tier["name"],
             "perks": tier["perks"],
         }
-    return render_template_string(PANEL_HTML, css=CSS, cfg=cfg,
+    return render_template_string(PANEL_HTML, css=CSS, cfg=cfg, brand=cfg["brand"],
                                   username=session.get("username", "guest"),
                                   access=view)
 
@@ -263,7 +270,7 @@ def owner():
             "expired": datetime.fromisoformat(k["expires"]) < now_utc(),
         })
     keylist.sort(key=lambda x: x["token"])
-    return render_template_string(OWNER_HTML, css=CSS, cfg=cfg,
+    return render_template_string(OWNER_HTML, css=CSS, cfg=cfg, brand=cfg["brand"],
                                   counters=cfg["counters"], keys=keylist)
 
 
@@ -316,6 +323,8 @@ def api_update_settings():
     if not session.get("is_owner"):
         return jsonify(ok=False, error="Owner only."), 403
     data = request.json or {}
+    if data.get("brand"):
+        cfg["brand"] = data["brand"].strip()
     if data.get("discord_invite"):
         cfg["discord_invite"] = data["discord_invite"].strip()
     if data.get("display_name"):
@@ -342,8 +351,11 @@ def api_start_snipe():
         return jsonify(ok=False,
                        message="Slot limit reached (%s concurrent)." % tier_cfg["slots"]), 400
 
+    platform = request.form.get("platform", "discord").strip().lower()
+    if platform not in ("discord", "roblox", "tiktok"):
+        return jsonify(ok=False, message="Unknown platform."), 400
     target = request.form.get("username", "").strip()
-    user_token = request.form.get("token", "").strip()
+    auth = request.form.get("auth", "").strip()
     webhook = request.form.get("webhook", "").strip()
     if not target:
         return jsonify(ok=False, message="Target username required."), 400
@@ -367,11 +379,11 @@ def api_start_snipe():
         return jsonify(ok=False, message="No proxies loaded. Check proxies.txt."), 500
 
     logs_holder = {"lines": []}
-    task_id = start_snipe(target, user_token, webhook, attempts, delay_min, delay_max,
+    task_id = start_snipe(platform, target, auth, webhook, attempts, delay_min, delay_max,
                           PROXIES, lambda line: logs_holder["lines"].append(line))
     SNIPE_LOGS[task_id] = {"user": uid, "lines": logs_holder["lines"]}
     return jsonify(ok=True, task_id=task_id,
-                   message="Sniper started on %s via proxy pool." % target)
+                   message="Sniper started on %s (%s) via proxy pool." % (platform.upper(), target))
 
 
 @app.route("/api/sniper_log")
@@ -386,37 +398,44 @@ def api_sniper_log():
 # ---------------------------------------------------------------- embedded assets
 
 CSS = """
-:root{--bg:#0b0e14;--card:#131722;--accent:#5865f2;--green:#2ecc71;--red:#e74c3c;--gold:#f1c40f}
+:root{--bg:#08080c;--panel:#0e0f16;--card:#14161f;--line:#232634;
+      --text:#e8eaf0;--muted:#8b93a7;--accent:#7c5cff;--green:#00ff9d;--red:#ff4757}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:#e8eaf0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
-.wrap{max-width:960px;margin:0 auto;padding:30px 16px}
-h1{font-size:1.6rem;margin-bottom:4px}
-.sub{color:#8b93a7;font-size:.9rem;margin-bottom:24px}
-.card{background:var(--card);border:1px solid #232a3b;border-radius:12px;padding:24px;margin-bottom:20px}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1080px;margin:0 auto;padding:30px 18px}
+h1{font-size:1.7rem;letter-spacing:.5px}
+h1 .brand{background:linear-gradient(90deg,var(--accent),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);font-size:.9rem;margin:6px 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:18px}
 .tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-.tab{padding:10px 18px;background:var(--card);border:1px solid #232a3b;border-radius:8px;cursor:pointer;color:#8b93a7;font-weight:600}
-.tab.active{color:#fff;border-color:var(--accent);background:#1b2133}
-label{display:block;font-size:.85rem;color:#8b93a7;margin:12px 0 6px}
-input,select,textarea{width:100%;padding:11px 12px;background:#0d1119;border:1px solid #2a3246;border-radius:8px;color:#fff;font-size:.95rem}
+.tab{padding:10px 18px;background:var(--panel);border:1px solid var(--line);border-radius:9px;cursor:pointer;color:var(--muted);font-weight:600}
+.tab.active{color:#fff;border-color:var(--accent);background:#1a1630}
+label{display:block;font-size:.8rem;color:var(--muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.6px}
+input,select,textarea{width:100%;padding:11px 12px;background:#0a0b11;border:1px solid var(--line);border-radius:9px;color:#fff;font-size:.95rem}
 input:focus{outline:none;border-color:var(--accent)}
-button{padding:11px 18px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:.9rem}
+button{padding:11px 20px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:.9rem;letter-spacing:.4px}
 button:hover{filter:brightness(1.15)}
-button.green{background:var(--green)}
+button.green{background:var(--green);color:#04241a}
 button.red{background:var(--red)}
-button.gold{background:var(--gold);color:#111}
+button.gold{background:#f1c40f;color:#14161f}
+.pill{padding:9px 16px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-weight:700;cursor:pointer;font-size:.8rem;letter-spacing:.5px}
+.pill.active{border-color:var(--green);color:var(--green);background:#05231a}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-table{width:100%;border-collapse:collapse;font-size:.85rem}
-th,td{padding:10px 8px;text-align:left;border-bottom:1px solid #232a3b}
-th{color:#8b93a7;font-weight:600}
-.badge{padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:.72rem}
+.badge{padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.4px}
 .badge.basic{background:#3b4252;color:#c9d1e0}
 .badge.premium{background:#5c3a00;color:#ffd479}
 .badge.admin{background:#7a1f1f;color:#ffb3b3}
-.log{background:#0d1119;border:1px solid #232a3b;border-radius:8px;padding:12px;height:220px;overflow-y:auto;font-family:monospace;font-size:.8rem;white-space:pre-wrap}
+.log{background:#07080d;border:1px solid var(--line);border-radius:10px;padding:12px;height:240px;overflow-y:auto;font-family:Consolas,monospace;font-size:.78rem;white-space:pre-wrap;color:#a9b1c9}
 .msg{color:var(--green);font-weight:600;margin-top:14px}
 .err{color:var(--red);font-weight:600;margin-top:14px}
-code{background:#0d1119;padding:2px 8px;border-radius:5px;font-size:.9rem;word-break:break-all}
-a{color:#8ab4ff}
+code{background:#0a0b11;padding:2px 8px;border-radius:5px;font-size:.9rem;word-break:break-all}
+a{color:#9aa5ff}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;flex:1;min-width:150px}
+.stat b{font-size:1.3rem;display:block;margin-top:4px}
+.stat span{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.6px}
 """
 
 INDEX_HTML = """
@@ -425,13 +444,13 @@ INDEX_HTML = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Z0F1LD | Login</title>
+<title>{{ brand }} | Access</title>
 <style>{{ css }}</style>
 </head>
 <body>
-<div class="wrap" style="max-width:460px">
-  <h1>Z0F1LD <span style="color:#5865f2">SNIPER</span></h1>
-  <p class="sub">Username sniper — owned by <b>zofildoterr</b></p>
+<div class="wrap" style="max-width:480px">
+  <h1><span class="brand">{{ brand }}</span></h1>
+  <p class="sub">Multi-platform username sniper · owned by <b>zofildoterr</b></p>
 
   <div class="tabs">
     <div class="tab active" data-tab="login">LOGIN</div>
@@ -457,8 +476,8 @@ INDEX_HTML = """
       <input type="text" name="username" required minlength="3">
       <label>Password</label>
       <input type="password" name="password" required minlength="4">
-      <p class="sub" style="margin-top:10px">Accounts are for tracking your access.
-         To get sniper time you still need a <b>token + code</b>.</p>
+      <p class="sub" style="margin-top:10px">Accounts track your access. To snipe you still
+         need a <b>token + code</b>.</p>
       <div style="margin-top:18px"><button type="submit">CREATE ACCOUNT</button></div>
     </form>
   </div>
@@ -496,14 +515,14 @@ PANEL_HTML = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sniper Panel — {{ username }}</title>
+<title>{{ brand }} | Dashboard</title>
 <style>{{ css }}</style>
 </head>
 <body>
 <div class="wrap">
   <div class="row" style="justify-content:space-between">
     <div>
-      <h1>SNIPER PANEL</h1>
+      <h1><span class="brand">{{ brand }}</span> SNIPER</h1>
       <p class="sub">Logged in as <b>{{ username }}</b> · owned by <b>zofildoterr</b></p>
     </div>
     <div class="row">
@@ -523,21 +542,30 @@ PANEL_HTML = """
         {{ 'EXPIRED' if access.expired else 'Expires: ' + access.expires_str }}
       </b>
     </div>
-    <ul style="margin:14px 0 0 18px;color:#8b93a7;font-size:.9rem">
+    <ul style="margin:14px 0 0 18px;color:var(--muted);font-size:.9rem">
       {% for p in access.perks %}<li style="margin:3px 0">{{ p }}</li>{% endfor %}
     </ul>
   </div>
 
   {% if not access.expired %}
   <div class="card">
-    <h3 style="margin-bottom:6px">SNIPE A USERNAME</h3>
-    <p class="sub">Watch a username and claim it the instant it frees up. Traffic is routed
-       through the rotating proxy pool.</p>
+    <h3 style="margin-bottom:4px">SNIPE A USERNAME</h3>
+    <p class="sub">Pick a platform, watch a username, claim it the instant it frees up.
+       All traffic rotates through the proxy pool.</p>
+
+    <label>Platform</label>
+    <div class="row" style="margin-bottom:6px">
+      <div class="pill active" data-platform="discord">DISCORD</div>
+      <div class="pill" data-platform="roblox">ROBLOX</div>
+      <div class="pill" data-platform="tiktok">TIKTOK</div>
+    </div>
+
     <form id="snipeForm">
+      <input type="hidden" name="platform" id="platformInput" value="discord">
       <label>Target Username</label>
       <input type="text" name="username" required placeholder="rare_name">
-      <label>Discord User Token (optional — enables auto-claim)</label>
-      <input type="password" name="token" placeholder="••••••••••••••••">
+      <label id="authLabel">Discord User Token (optional — enables auto-claim)</label>
+      <input type="password" name="auth" id="authInput" placeholder="••••••••••••••••">
       <label>Discord Webhook URL (optional — hits get pushed here)</label>
       <input type="text" name="webhook" placeholder="https://discord.com/api/webhooks/...">
       <div class="row" style="margin-top:12px">
@@ -559,6 +587,12 @@ PANEL_HTML = """
     <p class="msg" id="snipeMsg" style="display:none"></p>
   </div>
 
+  <div class="row" style="margin-bottom:18px">
+    <div class="stat"><span>Proxies loaded</span><b>{{ cfg['proxy_file'] and 'pool' }}</b></div>
+    <div class="stat"><span>Concurrent slots</span><b>{{ 'UNLIMITED' if access.tier == 'admin' else access.perks[2] }}</b></div>
+    <div class="stat"><span>Platforms</span><b>3</b></div>
+  </div>
+
   <div class="card">
     <h3 style="margin-bottom:6px">LIVE LOG</h3>
     <div class="log" id="log">Waiting for a snipe task…</div>
@@ -576,6 +610,27 @@ PANEL_HTML = """
 {% if access and not access.expired %}
 <script>
 let activeTask = null;
+const AUTH_LABELS = {
+  discord: 'Discord User Token (optional — enables auto-claim)',
+  roblox:  '.ROBLOSECURITY Cookie (optional — enables auto-claim)',
+  tiktok:  'TikTok sessionid (optional — best-effort claim)'
+};
+const AUTH_PLACEHOLDERS = {
+  discord: '••••••••••••••••',
+  roblox:  '_|WARNING:-DO-NOT-SHARE-...',
+  tiktok:  'sessionid=xxxxxxxx'
+};
+
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    const plat = p.dataset.platform;
+    document.getElementById('platformInput').value = plat;
+    document.getElementById('authLabel').textContent = AUTH_LABELS[plat];
+    document.getElementById('authInput').placeholder = AUTH_PLACEHOLDERS[plat];
+  });
+});
 
 document.getElementById('snipeForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -617,14 +672,14 @@ OWNER_HTML = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Owner Panel — {{ cfg.owner.display_name }}</title>
+<title>{{ brand }} | Owner Panel</title>
 <style>{{ css }}</style>
 </head>
 <body>
-<div class="wrap" style="max-width:1100px">
+<div class="wrap" style="max-width:1150px">
   <div class="row" style="justify-content:space-between">
     <div>
-      <h1>OWNER PANEL <span style="color:#f1c40f">★</span></h1>
+      <h1><span class="brand">{{ brand }}</span> OWNER PANEL <span style="color:#f1c40f">★</span></h1>
       <p class="sub">Welcome, <b>{{ cfg.owner.display_name }}</b> — unlimited access, full control.</p>
     </div>
     <div class="row">
@@ -679,6 +734,8 @@ OWNER_HTML = """
   <div class="card">
     <h3>SETTINGS</h3>
     <form id="settingsForm">
+      <label>Brand Name (shown in header)</label>
+      <input type="text" name="brand" value="{{ cfg.brand }}">
       <label>Discord Invite Link (shown to all buyers)</label>
       <input type="text" name="discord_invite" value="{{ cfg['discord_invite'] }}">
       <label>Owner Display Name (shown in header)</label>
@@ -776,9 +833,10 @@ $('settingsForm').addEventListener('submit', async e => {
 
 
 if __name__ == "__main__":
-    print("=" * 50)
-    print(" Z0F1LD SNIPER — owner: zofildoterr")
-    print(" Owner key : %s" % cfg["owner"]["key"])
-    print(" Panel     : http://127.0.0.1:5000")
-    print("=" * 50)
+    print("=" * 52)
+    print(" zadenxx — multi-platform username sniper")
+    print(" Owner   : zofildoterr")
+    print(" Key     : %s" % cfg["owner"]["key"])
+    print(" Panel   : http://127.0.0.1:5000")
+    print("=" * 52)
     app.run(host="0.0.0.0", port=5000, debug=False)
