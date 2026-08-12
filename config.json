@@ -1,0 +1,61 @@
+{
+  "secret_key": "",
+  "owner": {
+    "key": "Z0F1LD0TERRRR11111",
+    "password": "zofildoterr",
+    "display_name": "zofildoterr"
+  },
+  "discord_invite": "https://discord.gg/REPLACE_ME",
+  "proxy_file": "proxies.txt",
+  "counters": {
+    "basic": 0,
+    "premium": 0,
+    "admin": 0
+  },
+  "tiers": {
+    "basic": {
+      "name": "Basic - $3",
+      "prefix": "3DDDDLOOOOLLLARRRR",
+      "password_length": 6,
+      "duration_hours": 72,
+      "slots": 1,
+      "perks": [
+        "6-character license code",
+        "3 days of sniper access",
+        "1 concurrent sniper slot",
+        "Proxy rotation enabled"
+      ]
+    },
+    "premium": {
+      "name": "Premium - $5",
+      "prefix": "PREMIUM5DOLLAAAA",
+      "password_length": 8,
+      "duration_hours": 168,
+      "slots": 5,
+      "perks": [
+        "8-character license code",
+        "7 days of sniper access",
+        "5 concurrent sniper slots",
+        "Priority sniping queue"
+      ]
+    },
+    "admin": {
+      "name": "Admin - $10",
+      "prefix": "ADDDMIMNNACCESSSSSSS",
+      "password_length": 12,
+      "duration_hours": 720,
+      "slots": 999,
+      "perks": [
+        "12-character license code",
+        "30 days of sniper access",
+        "Unlimited concurrent sniper slots",
+        "All features unlocked"
+      ]
+    }
+  },
+  "sniper": {
+    "max_attempts": 300,
+    "delay_min": 1.0,
+    "delay_max": 4.0
+  }
+}
