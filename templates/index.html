@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Z0F1LD | Login</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="wrap" style="max-width:460px">
+  <h1>Z0F1LD <span style="color:#5865f2">SNIPER</span></h1>
+  <p class="sub">Username sniper — owned by <b>zofildoterr</b></p>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="login">LOGIN</div>
+    <div class="tab" data-tab="signup">SIGNUP</div>
+    <div class="tab" data-tab="key">KEY ACCESS</div>
+  </div>
+
+  {% if error %}<p class="err">{{ error }}</p>{% endif %}
+
+  <!-- LOGIN -->
+  <div class="card tab-page" id="page-login">
+    <form method="POST" action="/login">
+      <label>Username</label>
+      <input type="text" name="username" required autocomplete="username">
+      <label>Password</label>
+      <input type="password" name="password" required autocomplete="current-password">
+      <div style="margin-top:18px"><button type="submit">LOGIN</button></div>
+    </form>
+  </div>
+
+  <!-- SIGNUP -->
+  <div class="card tab-page" id="page-signup" style="display:none">
+    <form method="POST" action="/signup">
+      <label>Username</label>
+      <input type="text" name="username" required minlength="3">
+      <label>Password</label>
+      <input type="password" name="password" required minlength="4">
+      <p class="sub" style="margin-top:10px">Accounts are for tracking your access.
+         To get sniper time you still need a <b>token + code</b>.</p>
+      <div style="margin-top:18px"><button type="submit">CREATE ACCOUNT</button></div>
+    </form>
+  </div>
+
+  <!-- KEY ACCESS -->
+  <div class="card tab-page" id="page-key" style="display:none">
+    <form method="POST" action="/key-access">
+      <label>License Token (letters + numbers)</label>
+      <input type="text" name="token" required placeholder="3DDDDLOOOOLLLARRRR1">
+      <label>Code Password (6/8/12 chars)</label>
+      <input type="text" name="code" required>
+      <p class="sub" style="margin-top:10px">Owner? Use <code>Z0F1LD0TERRRR11111</code> +
+         your owner password.</p>
+      <div style="margin-top:18px"><button type="submit" class="green">UNLOCK ACCESS</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-page').forEach(x => x.style.display = 'none');
+    t.classList.add('active');
+    document.getElementById('page-' + t.dataset.tab).style.display = 'block';
+  });
+});
+</script>
+</body>
+</html>
